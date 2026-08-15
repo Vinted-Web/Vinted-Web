@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --ink:#FBFAF8;
@@ -61,6 +62,7 @@
   }
   .brand p{ margin:6px 0 0; color:var(--text-muted); font-size:13.5px; letter-spacing:.3px;}
   .brand h1 span{ color:var(--brass); }
+  .header-actions{ display:flex; gap:10px; flex-wrap:wrap; }
 
   .btn{
     font-family:var(--font-sans); font-weight:600; font-size:14px; letter-spacing:.2px;
@@ -274,6 +276,29 @@
   ::selection{ background:var(--brass); color:#1a1a1a; }
   :focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
 
+  /* ---------- Small phone tuning ---------- */
+  @media(max-width:480px){
+    body{ padding:16px 10px 70px; }
+    .brand h1{ font-size:30px; }
+    .brand p{ font-size:12px; }
+    .app-header{ gap:12px; }
+    .header-actions{ width:100%; }
+    .header-actions .btn{ flex:1 1 auto; justify-content:center; }
+    .dash{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+    .stat-card{ padding:12px 12px 10px; }
+    .stat-value{ font-size:20px; }
+    .toolbar{ padding:10px; }
+    .search-box{ flex:1 1 100%; }
+    select.filter-select{ flex:1 1 auto; }
+    .filter-count{ width:100%; margin-left:0; text-align:right; }
+    .modal{ max-width:100%; border-radius:12px; }
+    .modal-body{ padding:16px; }
+    .modal-head{ padding:16px; }
+    .modal-foot{ padding:14px 16px; flex-wrap:wrap; }
+    .modal-foot .btn{ flex:1 1 auto; justify-content:center; }
+    .computed-box{ padding:12px; }
+  }
+
   /* ---------- Responsive card table ---------- */
   @media(max-width:900px){
     table, thead, tbody, tr, td{ display:block; width:100%; }
@@ -299,10 +324,21 @@
         <p>Suivi des achats &amp; reventes</p>
       </div>
     </div>
-    <button class="btn btn-primary" id="btn-add">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-      Nouvel article
-    </button>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btn-import-excel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+        Importer Excel
+      </button>
+      <input type="file" id="excel-import-input" accept=".xlsx,.xls,.csv" style="display:none;">
+      <button class="btn btn-ghost" id="btn-export-excel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M4 3h16"/></svg>
+        Exporter Excel
+      </button>
+      <button class="btn btn-primary" id="btn-add">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Nouvel article
+      </button>
+    </div>
   </header>
 
   <section class="dash" id="dashboard"></section>
@@ -1011,6 +1047,97 @@
     await saveArticles();
     renderAll();
     closeModal();
+  });
+
+  // ---------- Import / Export Excel ----------
+  // Ordre des colonnes : Site d'achat, Marque, Désignation, Prix d'achat,
+  // Quote-part frais de port, Frais d'emballage, Prix de mise en vente, Statut
+  const EXCEL_HEADERS = ["Site d'achat","Marque","Désignation","Prix d'achat","Quote-part frais de port","Frais d'emballage","Prix de mise en vente","Statut"];
+  const STATUT_EXPORT_LABEL = { Livraison:"en livraison", Vente:"en vente", Vendu:"vendu" };
+
+  function parseNumberCell(v){
+    if(v === undefined || v === null || v === '') return 0;
+    if(typeof v === 'number') return v;
+    const n = parseFloat(String(v).replace(',', '.').replace(/[^\d.\-]/g,''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseStatutCell(v){
+    const s = String(v||'').trim().toLowerCase();
+    if(s.includes('vendu')) return 'Vendu';
+    if(s.includes('vente')) return 'Vente';
+    if(s.includes('livraison')) return 'Livraison';
+    return 'Livraison';
+  }
+
+  el('btn-export-excel').addEventListener('click', ()=>{
+    if(typeof XLSX === 'undefined'){ toast("Bibliothèque Excel indisponible — vérifiez votre connexion internet", true); return; }
+    const rows = [EXCEL_HEADERS];
+    articles.forEach(a=>{
+      rows.push([
+        a.site || '',
+        a.marque || '',
+        a.designation || '',
+        Number(a.prixAchat)||0,
+        Number(a.fraisPort)||0,
+        Number(a.fraisEmballage)||0,
+        Number(a.prixVente)||0,
+        STATUT_EXPORT_LABEL[a.statut] || 'en livraison'
+      ]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:16},{wch:16},{wch:38},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Articles");
+    const date = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `vinted-export-${date}.xlsx`);
+    toast(`${articles.length} article(s) exporté(s)`);
+  });
+
+  el('btn-import-excel').addEventListener('click', ()=> el('excel-import-input').click());
+  el('excel-import-input').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    if(typeof XLSX === 'undefined'){ toast("Bibliothèque Excel indisponible — vérifiez votre connexion internet", true); return; }
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+      if(rows.length < 2){ toast("Fichier vide ou sans données à importer", true); return; }
+
+      let imported = 0;
+      // On ignore la ligne d'en-tête (ligne 0) et on ajoute les articles sans toucher aux existants
+      for(let i=1; i<rows.length; i++){
+        const r = rows[i];
+        if(!r || r.every(c => c === '' || c === undefined || c === null)) continue;
+        const [site, marque, designation, prixAchat, fraisPort, fraisEmballage, prixVente, statut] = r;
+        if(!site && !marque && !designation) continue;
+        const id = nextId();
+        articles.push({
+          id,
+          site: String(site||'').trim(),
+          marque: String(marque||'').trim(),
+          designation: String(designation||'').trim(),
+          prixAchat: parseNumberCell(prixAchat),
+          fraisPort: parseNumberCell(fraisPort),
+          fraisEmballage: parseNumberCell(fraisEmballage),
+          prixVente: parseNumberCell(prixVente),
+          statut: parseStatutCell(statut),
+          photo: null
+        });
+        imported++;
+      }
+      if(imported === 0){ toast("Aucune ligne valide trouvée dans le fichier", true); return; }
+      sortToNewestFirst();
+      await saveArticles();
+      renderAll();
+      toast(`${imported} article(s) importé(s) depuis Excel`);
+    }catch(err){
+      console.error("Erreur import Excel:", err);
+      toast("Échec de l'import — vérifiez le format du fichier", true);
+    }
   });
 
   // ---------- Lightbox ----------
