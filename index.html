@@ -321,7 +321,8 @@
     }
     tbody td::before{ content:attr(data-label); color:var(--text-muted); font-size:9.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:600; }
     tbody td[data-label="ID"]{ padding-bottom:5px; margin-bottom:3px; border-bottom:1px solid var(--ink-line); }
-    tbody td[data-label="Photo"]{ display:none; } /* miniature peu utile en liste compacte, visible en édition */
+    tbody td[data-label="Photo"]{ padding:4px 0; }
+    .thumb, .thumb-empty{ width:26px; height:26px; }
     tbody td[data-label="Désignation"]{ align-items:flex-start; }
     td.num{ text-align:right; }
     .row-actions{ justify-content:flex-end; width:100%; gap:4px; }
