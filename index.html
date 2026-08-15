@@ -314,21 +314,15 @@
     thead{ display:none; }
     table{ min-width:0; }
     tbody tr{
-      border:1px solid var(--ink-line); border-radius:8px; margin:6px 8px; padding:8px 10px; background:var(--ink);
-      display:grid; grid-template-columns:1fr 1fr; column-gap:10px;
+      border:1px solid var(--ink-line); border-radius:8px; margin:6px 8px; padding:7px 10px; background:var(--ink);
     }
     tbody td{
-      border:none; padding:3px 0; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px;
+      border:none; padding:3px 0; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px;
     }
     tbody td::before{ content:attr(data-label); color:var(--text-muted); font-size:9.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:600; }
-    /* Lignes prenant toute la largeur : ID+photo, désignation, statut, actions */
-    tbody td[data-label="ID"], tbody td[data-label="Désignation"], tbody td[data-label="Statut"], tbody td[data-label="Actions"]{
-      grid-column:1 / -1;
-    }
     tbody td[data-label="ID"]{ padding-bottom:5px; margin-bottom:3px; border-bottom:1px solid var(--ink-line); }
     tbody td[data-label="Photo"]{ display:none; } /* miniature peu utile en liste compacte, visible en édition */
     tbody td[data-label="Désignation"]{ align-items:flex-start; }
-    tbody td[data-label="Statut"]{ padding-top:4px; margin-top:3px; border-top:1px solid var(--ink-line); }
     td.num{ text-align:right; }
     .row-actions{ justify-content:flex-end; width:100%; gap:4px; }
     .tag-chip{ font-size:11px; padding:3px 8px 3px 13px; }
@@ -339,8 +333,8 @@
     .empty-state{ padding:44px 16px; }
   }
   @media(max-width:480px){
-    tbody tr{ grid-template-columns:1fr 1fr; margin:5px 6px; padding:7px 9px; }
-    tbody td{ font-size:11.5px; }
+    tbody tr{ margin:5px 6px; padding:6px 9px; }
+    tbody td{ font-size:11.5px; padding:2.5px 0; }
   }
 </style>
 </head>
