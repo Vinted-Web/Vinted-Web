@@ -135,6 +135,27 @@
   select.filter-select:hover{ border-color:#CBCFDE; }
   .filter-count{ font-size:12px; color:var(--text-muted); margin-left:auto; padding-left:8px; font-weight:500; }
 
+  /* ---------- Status pill filter row ---------- */
+  .status-filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .status-pill{
+    font-family:var(--font-sans); font-weight:600; font-size:13px; letter-spacing:.1px; padding:9px 16px;
+    border-radius:999px; cursor:pointer; border:1.5px solid transparent; white-space:nowrap; flex:0 0 auto;
+    transition:opacity .12s ease, box-shadow .12s ease, transform .12s ease; opacity:.55;
+  }
+  .status-pill:hover{ opacity:.85; }
+  .status-pill:active{ transform:scale(.97); }
+  .status-pill.active{ opacity:1; box-shadow:0 2px 6px rgba(20,24,38,.08); }
+  .status-pill[data-color="neutral"]{ background:#E7E9EF; color:#454B58; }
+  .status-pill[data-color="neutral"].active{ border-color:#B7BDCC; }
+  .status-pill[data-color="sky"]{ background:color-mix(in srgb, var(--sky) 15%, #FFFFFF); color:var(--sky); }
+  .status-pill[data-color="sky"].active{ border-color:color-mix(in srgb, var(--sky) 55%, transparent); }
+  .status-pill[data-color="amber"]{ background:color-mix(in srgb, var(--amber) 17%, #FFFFFF); color:color-mix(in srgb, var(--amber) 85%, black 12%); }
+  .status-pill[data-color="amber"].active{ border-color:color-mix(in srgb, var(--amber) 55%, transparent); }
+  .status-pill[data-color="plum"]{ background:color-mix(in srgb, var(--plum) 15%, #FFFFFF); color:var(--plum); }
+  .status-pill[data-color="plum"].active{ border-color:color-mix(in srgb, var(--plum) 55%, transparent); }
+  .status-pill[data-color="green"]{ background:color-mix(in srgb, var(--green) 15%, #FFFFFF); color:var(--green); }
+  .status-pill[data-color="green"].active{ border-color:color-mix(in srgb, var(--green) 55%, transparent); }
+
   /* ---------- Table ---------- */
   .table-wrap{
     background:var(--ink-soft); border:1px solid var(--ink-line); border-radius:var(--radius); overflow-x:auto; box-shadow:var(--shadow);
@@ -307,6 +328,12 @@
     .search-box{ flex:1 1 100%; }
     select.filter-select{ flex:1 1 auto; }
     .filter-count{ width:100%; margin-left:0; text-align:right; }
+    .status-filter-row{
+      flex-wrap:nowrap; overflow-x:auto; margin:0 -10px 16px; padding:0 10px 4px;
+      -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .status-filter-row::-webkit-scrollbar{ display:none; }
+    .status-pill{ font-size:12.5px; padding:8px 14px; }
     .modal{ max-width:100%; border-radius:14px; }
     .modal-body{ padding:16px; }
     .modal-head{ padding:16px; }
@@ -380,13 +407,6 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.8-3.8"/></svg>
       <input type="text" id="search-input" placeholder="Rechercher marque, désignation, site…">
     </div>
-    <select class="filter-select" id="filter-statut">
-      <option value="">Tous les statuts</option>
-      <option value="Livraison">En livraison</option>
-      <option value="Attente">En attente</option>
-      <option value="Vente">En vente</option>
-      <option value="Vendu">Vendu</option>
-    </select>
     <select class="filter-select" id="filter-site">
       <option value="">Tous les sites</option>
     </select>
@@ -395,6 +415,14 @@
     </select>
     <button class="btn btn-ghost btn-sm" id="btn-reset">Réinitialiser</button>
     <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <div class="status-filter-row" id="status-filter-row">
+    <button type="button" class="status-pill active" data-statut="" data-color="neutral">Tous les statuts</button>
+    <button type="button" class="status-pill" data-statut="Livraison" data-color="sky">En livraison</button>
+    <button type="button" class="status-pill" data-statut="Attente" data-color="amber">En attente</button>
+    <button type="button" class="status-pill" data-statut="Vente" data-color="plum">En vente</button>
+    <button type="button" class="status-pill" data-statut="Vendu" data-color="green">Vendu</button>
   </div>
 
   <div class="table-wrap">
@@ -895,12 +923,19 @@
 
   // ---------- Filters ----------
   el('search-input').addEventListener('input', (e)=>{ filters.q = e.target.value; renderTable(); });
-  el('filter-statut').addEventListener('change', (e)=>{ filters.statut = e.target.value; renderTable(); });
+  document.querySelectorAll('.status-pill').forEach(pill=>{
+    pill.addEventListener('click', ()=>{
+      filters.statut = pill.getAttribute('data-statut');
+      document.querySelectorAll('.status-pill').forEach(p=>p.classList.toggle('active', p===pill));
+      renderTable();
+    });
+  });
   el('filter-site').addEventListener('change', (e)=>{ filters.site = e.target.value; renderTable(); });
   el('filter-marque').addEventListener('change', (e)=>{ filters.marque = e.target.value; renderTable(); });
   el('btn-reset').addEventListener('click', ()=>{
     filters.q=''; filters.statut=''; filters.site=''; filters.marque='';
-    el('search-input').value=''; el('filter-statut').value=''; el('filter-site').value=''; el('filter-marque').value='';
+    el('search-input').value=''; el('filter-site').value=''; el('filter-marque').value='';
+    document.querySelectorAll('.status-pill').forEach(p=>p.classList.toggle('active', p.getAttribute('data-statut')===''));
     renderTable();
   });
 
